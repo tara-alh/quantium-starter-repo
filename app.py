@@ -1,39 +1,29 @@
 import pandas as pd
-from dash import Dash, dcc, html
-import plotly.express as px
 
-# Load and combine data
+# Load the three CSV files
 df1 = pd.read_csv("data/daily_sales_data_0.csv")
 df2 = pd.read_csv("data/daily_sales_data_1.csv")
 df3 = pd.read_csv("data/daily_sales_data_2.csv")
 
-df = pd.concat([df1, df2, df3])
+# Combine them into one dataframe
+df = pd.concat([df1, df2, df3], ignore_index=True)
 
-# Basic cleaning (just in case)
-df.columns = df.columns.str.lower()
+# Standardise text just in case
+df["product"] = df["product"].str.strip().str.lower()
 
-# Convert date column if it exists
-if "date" in df.columns:
-    df["date"] = pd.to_datetime(df["date"])
+# Keep only Pink Morsels
+df = df[df["product"] == "pink morsel"]
 
-# Create Dash app
-app = Dash(__name__)
+# Create sales column
+df["sales"] = df["quantity"] * df["price"]
 
-# Example visualisations (auto-adapts to columns)
-numeric_cols = df.select_dtypes(include="number").columns
+# Keep only the required columns
+df = df[["sales", "date", "region"]]
 
-fig = px.line(
-    df,
-    x="date" if "date" in df.columns else df.index,
-    y=numeric_cols[0] if len(numeric_cols) > 0 else None,
-    title="Sales Over Time"
-)
+# Rename columns to match the task exactly
+df.columns = ["Sales", "Date", "Region"]
 
-app.layout = html.Div([
-    html.H1("Quantium Sales Dashboard"),
+# Save the final processed file
+df.to_csv("processed_data.csv", index=False)
 
-    dcc.Graph(figure=fig)
-])
-
-if __name__ == "__main__":
-    app.run(debug=True)
+print("Done - processed_data.csv has been created")
