@@ -1,29 +1,36 @@
 import pandas as pd
+from dash import Dash, dcc, html
+import plotly.express as px
 
-# Load the three CSV files
-df1 = pd.read_csv("data/daily_sales_data_0.csv")
-df2 = pd.read_csv("data/daily_sales_data_1.csv")
-df3 = pd.read_csv("data/daily_sales_data_2.csv")
+# Load the processed data
+df = pd.read_csv("processed_data.csv")
 
-# Combine them into one dataframe
-df = pd.concat([df1, df2, df3], ignore_index=True)
+# Convert Date column to datetime and sort by date
+df["Date"] = pd.to_datetime(df["Date"])
+df = df.sort_values("Date")
 
-# Standardise text just in case
-df["product"] = df["product"].str.strip().str.lower()
+# Create the line chart
+fig = px.line(
+    df,
+    x="Date",
+    y="Sales",
+    color="Region",
+    title="Pink Morsels Sales Over Time"
+)
 
-# Keep only Pink Morsels
-df = df[df["product"] == "pink morsel"]
+# Add axis labels
+fig.update_layout(
+    xaxis_title="Date",
+    yaxis_title="Sales"
+)
 
-# Create sales column
-df["sales"] = df["quantity"] * df["price"]
+# Create the Dash app
+app = Dash(__name__)
 
-# Keep only the required columns
-df = df[["sales", "date", "region"]]
+app.layout = html.Div([
+    html.H1("Soul Foods Pink Morsels Sales Visualiser"),
+    dcc.Graph(figure=fig)
+])
 
-# Rename columns to match the task exactly
-df.columns = ["Sales", "Date", "Region"]
-
-# Save the final processed file
-df.to_csv("processed_data.csv", index=False)
-
-print("Done - processed_data.csv has been created")
+if __name__ == "__main__":
+    app.run(debug=True)
